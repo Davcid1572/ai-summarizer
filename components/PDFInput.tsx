@@ -1,47 +1,64 @@
 import { useRef, useState } from "react";
 
+//props interface for PDFInput component
 interface PDFInputProps {
   onFileSelect: (base64: string, fileName: string) => void;
   isLoading: boolean;
   selectedFileName: string;
 }
 
+// The getPrompt Function
 export default function PDFInput({
   onFileSelect,
   isLoading,
   selectedFileName,
 }: PDFInputProps) {
+  // State to track if a file is being dragged over the drop area
   const [isDragging, setIsDragging] = useState(false);
+  // Ref for the hidden file input element
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Function to process the selected file, either from drag-and-drop or file input
   const processFile = (file: File) => {
+    // Basic validation for file type and size
     if (!file) return;
 
+    // Only allow PDF files
     if (file.type !== "application/pdf") {
       alert("Please upload a PDF file only.");
       return;
     }
 
+    // Limit file size to 10MB for better performance and to avoid hitting API limits
     if (file.size > 10 * 1024 * 1024) {
       alert("File is too large. Please upload a PDF under 10MB.");
       return;
     }
 
+    // Read the file as a base64 string using FileReader
     const reader = new FileReader();
 
+    // When the file is loaded, extract the base64 string and pass it to the parent component via onFileSelect
     reader.onload = (e) => {
       const base64 = (e.target?.result as string).split(",")[1];
+
+      // readAsDataURL returns a string that looks like this:
+      // data:application/pdf;base64,JVBERi0xLjQKJcfs..
+      // We only want the part after the comma — the actual Base64 data. .split(",")[1] splits on the comma and takes the second part. The data:application/pdf;base64, prefix would confuse our server so we strip it here.
+
       onFileSelect(base64, file.name);
     };
 
     reader.readAsDataURL(file);
   };
 
+  // Handler for file input change event
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) processFile(file);
   };
 
+  // Handlers for drag-and-drop events to manage the dragging state and process the dropped file
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
@@ -49,11 +66,13 @@ export default function PDFInput({
     if (file) processFile(file);
   };
 
+  // Handler for when a file is dragged over the drop area to set the dragging state
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
   };
 
+  // Handler for when a file is dragged away from the drop area to reset the dragging state
   const handleDragLeave = () => {
     setIsDragging(false);
   };
