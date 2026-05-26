@@ -1,3 +1,4 @@
+import ModeSelector from "@/components/ModeSelector";
 import React from "react";
 
 const page = () => {
